@@ -47,4 +47,20 @@ extension UIImage {
         
         return UIImage(cgImage: cgImage, scale: scale, orientation: imageOrientation)
     }
+    
+    //Xử lí ảnh bị mirror(gương) nếu chụp camera trước:
+    func flipHorizontally() -> UIImage {
+        UIGraphicsBeginImageContextWithOptions(self.size, false, self.scale)
+        let context = UIGraphicsGetCurrentContext()!
+        
+        context.translateBy(x: self.size.width, y: 0)
+        context.scaleBy(x: -1.0, y: 1.0)
+        
+        self.draw(in: CGRect(origin: .zero, size: self.size))
+        
+        let flippedImage = UIGraphicsGetImageFromCurrentImageContext()!
+        UIGraphicsEndImageContext()
+        
+        return flippedImage
+    }
 }

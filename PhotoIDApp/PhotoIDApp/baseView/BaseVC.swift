@@ -7,6 +7,9 @@
 import UIKit
 import Photos
 import AVFoundation
+import Vision
+import VisionKit
+import CoreML
 
 class BaseVC: UIViewController {
     
@@ -79,5 +82,58 @@ class BaseVC: UIViewController {
             })
             viewController.present(alert, animated: true)
     }
+}
 
+extension BaseVC {
+    func phanTichNoiDungImage(image: UIImage, completion: @escaping (String) -> Void) {
+        guard let cgImg = image.cgImage else {
+            completion("Không thể phân tích ảnh!")
+            return
+        }
+        
+        // Load CoreML model
+        guard let model = try? VNCoreMLModel(for: MobileNetV2().model) else {
+            completion("Failed to load ML model")
+            return
+        }
+        
+        // Create request
+        let request = VNCoreMLRequest(model: model) { request, error in
+            guard let results = request.results as? [VNClassificationObservation], let topResult = results.first else {
+                completion("Could not classify image")
+                return
+            }
+            
+            let topLabel = topResult.identifier.lowercased()
+            let confidence = topResult.confidence
+            
+            // Optional: Print top 3 results
+            print("Top Results:")
+            for r in results.prefix(3) {
+                print("• \(r.identifier) – \(r.confidence)")
+            }
+            
+            // Basic logic to classify
+            if topLabel.contains("person") || topLabel.contains("human") {
+                let isPortrait = image.size.height > image.size.width
+                completion(isPortrait ? "Portrait of one person" : "One person (not portrait format)")
+            } else if topLabel.contains("cat") || topLabel.contains("dog") || topLabel.contains("animal") {
+                completion("Animal detected")
+            } else if topLabel.contains("plant") || topLabel.contains("tree") || topLabel.contains("flower") {
+                completion("Plant or nature")
+            } else {
+                completion("Other: \(topLabel.capitalized)")
+            }
+        }
+        
+        // Run request
+        let handler = VNImageRequestHandler(cgImage: cgImg, options: [:])
+        DispatchQueue.global(qos: .userInitiated).async {
+            do {
+                try handler.perform([request])
+            } catch {
+                completion("Image analysis failed: \(error.localizedDescription)")
+            }
+        }
+    }
 }

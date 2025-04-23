@@ -99,6 +99,10 @@ extension HomeViewController: UIImagePickerControllerDelegate, CropViewControlle
         cropViewController.dismiss(animated: true) {
             // Dùng ảnh đã crop (hiển thị hoặc upload)
             self.imageV.image = image
+            self.phanTichNoiDungImage(image: image) { [weak self] result in
+                guard let self = self else { return }
+                self.typeImageLbl.text = result
+            }
         }
     }
     
